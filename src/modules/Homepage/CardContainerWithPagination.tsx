@@ -269,7 +269,7 @@ export default function CardContainerWithPagination() {
     <div className="w-full flex flex-col items-center gap-6">
       {/* Display the total count with refresh button */}
       <div className="w-full flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-full flex items-center">
+        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-full flex items-center">
           <span className="font-medium text-darkBlue-1 dark:text-blue-700">
             {articles.length}
           </span>{" "}
