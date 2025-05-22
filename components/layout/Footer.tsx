@@ -9,14 +9,14 @@ function Footer() {
         {NAVBAR_LINKS.map((link) => (
           <Link
             key={link.text}
-            className="text-gray-500 text-sm font-medium hover:text-gray-900 transition-colors duration-300"
+            className="hidden sm:flex text-gray-500 dark:text-gray-400 text-lg font-medium hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-300"
             href={link.route}
           >
             {link.text}
           </Link>
         ))}
       </div>
-      <span className="font-bold text-sm text-[#3E3E3E] text-center">
+      <span className="font-bold text-sm text-[#3E3E3E] dark:text-gray-400 text-center">
         Copyright © 2021 Quick Blog. All Rights Reserved.
       </span>
     </div>
