@@ -16,7 +16,7 @@ function Footer() {
           </Link>
         ))}
       </div>
-      <span className="font-bold text-sm text-[#3E3E3E]">
+      <span className="font-bold text-sm text-[#3E3E3E] text-center">
         Copyright © 2021 Quick Blog. All Rights Reserved.
       </span>
     </div>

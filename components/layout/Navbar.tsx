@@ -1,13 +1,14 @@
 import { NAVBAR_LINKS } from "@/src/constants/links.constant";
 import Link from "next/link";
+import { ThemeSwitch } from "../theme-switch";
 
 export default function Navbar() {
   return (
-    <div className="container flex items-center justify-between mt-14">
+    <div className="container flex items-center justify-between">
       <Link href="/">
         <h1 className="font-black text-2xl text-darkBlue-1">Quick Blog</h1>
       </Link>
-      <div className="flex items-center gap-x-5">
+      <div className="hidden sm:flex items-center gap-x-5">
         {NAVBAR_LINKS.map((link) => (
           <Link
             key={link.text}
@@ -17,6 +18,9 @@ export default function Navbar() {
             {link.text}
           </Link>
         ))}
+      </div>
+      <div className="block sm:hidden">
+        <ThemeSwitch />
       </div>
     </div>
   );

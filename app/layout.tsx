@@ -12,7 +12,7 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="en">
       <head />
-      <body className={"container overflow-hidden"}>
+      <body className={"container p-6"}>
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <Navbar />
           <main className="w-auto h-fit">{children}</main>
