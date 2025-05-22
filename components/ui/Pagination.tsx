@@ -59,11 +59,24 @@ export default function Pagination({
       <Button
         variant={currentPage === 1 ? "ghost" : "flat"}
         size="sm"
-        className="min-w-[40px] size-10 rounded-full"
+        className="min-w-[40px] size-10 rounded-full flex items-center justify-center"
         isDisabled={currentPage === 1}
         onPress={() => onPageChange(currentPage - 1)}
       >
-        &#8592;
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="transition-transform group-hover:-translate-x-0.5"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
       </Button>
 
       {/* Page numbers */}
@@ -83,7 +96,7 @@ export default function Pagination({
               {pageNumber}
             </Button>
           ) : (
-            <span className="px-2">...</span>
+            <span className="px-2 text-gray-400">•••</span>
           )}
         </React.Fragment>
       ))}
@@ -92,11 +105,24 @@ export default function Pagination({
       <Button
         variant={currentPage === totalPages ? "ghost" : "flat"}
         size="sm"
-        className="min-w-[40px] size-10 rounded-full"
+        className="min-w-[40px] size-10 rounded-full flex items-center justify-center"
         isDisabled={currentPage === totalPages}
         onPress={() => onPageChange(currentPage + 1)}
       >
-        &#8594;
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="transition-transform group-hover:translate-x-0.5"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
       </Button>
     </div>
   );

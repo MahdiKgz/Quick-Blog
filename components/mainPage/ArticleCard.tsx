@@ -12,22 +12,42 @@ function ArticleCard({ id, title, body }: Article) {
   return (
     <Link
       href={`/blog/${id}`}
-      className="border-2 border-dashed border-gray-600 h-full flex flex-col items-start gap-0 rounded-lg"
+      className="border border-gray-200 dark:border-gray-700 h-full flex flex-col items-start gap-0 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white dark:bg-gray-800"
     >
-      <Image
-        src={`https://picsum.photos/seed/${id}/500/300`}
-        alt={title}
-        width={400}
-        height={150}
-        className="rounded-t-lg"
-      />
-      <div className="w-full p-4 flex flex-col items-start gap-y-4">
-        <h1 className="text-2xl font-light text-wrap line-clamp-2 dark:text-gray-400">
+      <div className="relative w-full h-[180px] overflow-hidden">
+        <Image
+          src={`https://picsum.photos/seed/${id}/500/300`}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+      <div className="w-full p-5 flex flex-col items-start gap-y-3">
+        <h1 className="text-xl font-semibold text-wrap line-clamp-2 text-gray-800 dark:text-gray-200">
           {title}
         </h1>
-        <span className="text-sm text-zinc-900 dark:text-gray-600 text-wrap line-clamp-2">
+        <p className="text-sm text-gray-600 dark:text-gray-400 text-wrap line-clamp-3">
           {body}
-        </span>
+        </p>
+        <div className="mt-2 text-darkBlue-1 dark:text-blue-500 text-sm font-medium flex items-center">
+          Read more
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="ml-1 transition-transform group-hover:translate-x-1"
+          >
+            <path d="M5 12h14" />
+            <path d="m12 5 7 7-7 7" />
+          </svg>
+        </div>
       </div>
     </Link>
   );

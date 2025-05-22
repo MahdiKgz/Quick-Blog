@@ -75,43 +75,78 @@ function SearchModule({ onSearchResults }: SearchModuleProps) {
         className="w-full"
         label="Search Articles"
         variant="flat"
-        placeholder="Type to search for articles..."
         classNames={{
           label: "text-base text-darkBlue-1 dark:text-blue-700",
-          input: "pr-10",
+          input: "pl-12 pr-12",
+          innerWrapper: "group",
         }}
         value={searchQuery}
         onValueChange={setSearchQuery}
+        startContent={
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-data-[focused=true]:text-darkBlue-1 dark:group-data-[focused=true]:text-blue-700 transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="group-data-[focused=true]:scale-110 transition-transform"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </div>
+        }
         endContent={
           searchQuery ? (
             <Button
               size="sm"
               variant="ghost"
-              className="min-w-0 p-0 h-5 w-5 absolute right-3"
+              className="min-w-0 p-0 h-8 w-8 rounded-full absolute right-2"
               onPress={handleClearSearch}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-400"
-                fill="none"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
+                fill="none"
                 stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
               </svg>
             </Button>
           ) : null
         }
       />
       {debouncedQuery && (
-        <div className="mt-2 text-sm text-gray-500">
+        <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
           Showing results for:{" "}
-          <span className="font-medium">{debouncedQuery}</span>
+          <span className="font-medium text-darkBlue-1 dark:text-blue-700">
+            {debouncedQuery}
+          </span>
         </div>
       )}
     </div>

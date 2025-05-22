@@ -22,14 +22,57 @@ function HomePageModule() {
 
       {/* Display no results message if search returns empty */}
       {!hasSearchResults && (
-        <div className="w-full py-6 text-center">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8">
-            <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
-              No articles found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Try adjusting your search terms to find what you're looking for.
-            </p>
+        <div className="w-full py-8 text-center">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex flex-col items-center">
+              <div className="mb-4 text-amber-500 dark:text-amber-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="50"
+                  height="50"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="animate-pulse"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                No articles found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md">
+                We couldn't find any articles matching your search criteria. Try
+                adjusting your search terms or browse our categories below.
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => setHasSearchResults(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-darkBlue-1 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                  Back to all articles
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
