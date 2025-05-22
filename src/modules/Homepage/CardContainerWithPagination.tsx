@@ -23,33 +23,43 @@ const ArticleCardSkeleton = () => (
   </div>
 );
 
+// Fetch posts from the API
 async function fetchPosts(): Promise<Article[]> {
-  const res = await fetch("https://jsonplaceholder.typicode.com/posts");
-  if (!res.ok) throw new Error("Failed to fetch posts");
-  return res.json();
+  try {
+    const res = await fetch("https://jsonplaceholder.typicode.com/posts");
+    if (!res.ok) throw new Error("Failed to fetch posts");
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    return []; // Return empty array on error, fallback will handle it
+  }
 }
 
 export default function CardContainerWithPagination() {
-  const { setPosts } = useBlogStore();
+  const { setPosts, isLoaded, articles, hasArticles } = useBlogStore();
 
+  // Use React Query to fetch and cache the articles
   const {
-    data: articles,
+    data: fetchedArticles,
     isLoading: isFetchingPosts,
     isError,
     error,
-  } = useQuery<Article[], Error>({
+  } = useQuery({
     queryKey: ["articles"],
     queryFn: fetchPosts,
+    // Skip fetching if we already have data in the store
+    enabled: !hasArticles(),
   });
 
-  // ذخیره مقالات در Zustand
+  // Store articles in Zustand when they're loaded
   useEffect(() => {
-    if (articles) {
-      setPosts(articles);
+    if (fetchedArticles && fetchedArticles.length > 0) {
+      setPosts(fetchedArticles);
     }
-  }, [articles, setPosts]);
+  }, [fetchedArticles, setPosts]);
 
-  if (isFetchingPosts) {
+  // Show skeletons while loading and we don't have cached data
+  if (isFetchingPosts && !hasArticles()) {
     return (
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-10">
         {Array.from({ length: 6 }).map((_, index) => (
@@ -59,13 +69,20 @@ export default function CardContainerWithPagination() {
     );
   }
 
-  if (isError) return <ErrorMessage message={error?.message} />;
+  // Show error message if fetching failed and we don't have cached data
+  if (isError && !hasArticles()) {
+    return <ErrorMessage message={error?.message} />;
+  }
 
+  // Get articles from store (including possible fallback dummy data)
+  const articlesToDisplay = articles.slice(0, 8);
+
+  // Display the articles
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-10">
-      {articles
-        ?.slice(0, 8)
-        .map((post) => <ArticleCard key={post.id} {...post} />)}
+      {articlesToDisplay.map((post) => (
+        <ArticleCard key={post.id} {...post} />
+      ))}
     </div>
   );
 }
