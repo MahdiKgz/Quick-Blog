@@ -2,6 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
+interface Article {
+  id: number;
+  title: string;
+  body: string;
+}
+
 function ArticleCard({ id, title, body }: Article) {
   return (
     <Link
