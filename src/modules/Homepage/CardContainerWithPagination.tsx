@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ArticleCard from "@/components/mainPage/ArticleCard";
 import ErrorMessage from "@/components/Announcment/ErrorMessage";
 import useBlogStore from "@/src/stores/usePostStore";
+import Pagination from "@/components/ui/Pagination";
 
 interface Article {
   id: number;
@@ -36,7 +37,9 @@ async function fetchPosts(): Promise<Article[]> {
 }
 
 export default function CardContainerWithPagination() {
-  const { setPosts, isLoaded, articles, hasArticles } = useBlogStore();
+  const { setPosts, articles, hasArticles } = useBlogStore();
+  const [currentPage, setCurrentPage] = useState(1);
+  const articlesPerPage = 8;
 
   // Use React Query to fetch and cache the articles
   const {
@@ -58,11 +61,23 @@ export default function CardContainerWithPagination() {
     }
   }, [fetchedArticles, setPosts]);
 
+  // Memoized page change handler to prevent unnecessary re-renders
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when page changes with smooth animation
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Reset to page 1 if articles change (e.g. if articles are filtered)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [articles.length]);
+
   // Show skeletons while loading and we don't have cached data
   if (isFetchingPosts && !hasArticles()) {
     return (
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-10">
-        {Array.from({ length: 6 }).map((_, index) => (
+        {Array.from({ length: articlesPerPage }).map((_, index) => (
           <ArticleCardSkeleton key={index} />
         ))}
       </div>
@@ -74,15 +89,47 @@ export default function CardContainerWithPagination() {
     return <ErrorMessage message={error?.message} />;
   }
 
-  // Get articles from store (including possible fallback dummy data)
-  const articlesToDisplay = articles.slice(0, 8);
+  // Calculate pagination
+  const totalPages = Math.ceil(articles.length / articlesPerPage);
+  const startIndex = (currentPage - 1) * articlesPerPage;
+  const endIndex = startIndex + articlesPerPage;
+  const currentArticles = articles.slice(startIndex, endIndex);
 
-  // Display the articles
+  // Show message if no articles are found
+  if (articles.length === 0) {
+    return (
+      <div className="w-full py-10 text-center">
+        <h3 className="text-xl text-gray-500 dark:text-gray-400">
+          No articles found.
+        </h3>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-10">
-      {articlesToDisplay.map((post) => (
-        <ArticleCard key={post.id} {...post} />
-      ))}
+    <div className="w-full flex flex-col items-center gap-10">
+      {/* Display the total count */}
+      <div className="w-full text-right text-sm text-gray-500 dark:text-gray-400">
+        Showing {startIndex + 1}-{Math.min(endIndex, articles.length)} of{" "}
+        {articles.length} articles
+      </div>
+
+      {/* Articles grid */}
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-10">
+        {currentArticles.map((post) => (
+          <ArticleCard key={post.id} {...post} />
+        ))}
+      </div>
+
+      {/* Pagination component */}
+      {totalPages > 1 && (
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+          maxPagesShown={5}
+        />
+      )}
     </div>
   );
 }
