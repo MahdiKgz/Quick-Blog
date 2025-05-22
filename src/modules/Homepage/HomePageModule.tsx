@@ -1,5 +1,6 @@
 import React from "react";
 import SearchModule from "./SearchModule";
+import CardContainerWithPagination from "./CardContainerWithPagination";
 
 function HomePageModule() {
   return (
@@ -13,6 +14,7 @@ function HomePageModule() {
         </span>
       </div>
       <SearchModule />
+      <CardContainerWithPagination />
     </div>
   );
 }
