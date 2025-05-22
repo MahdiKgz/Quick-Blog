@@ -1,4 +1,5 @@
 import React from "react";
+import SearchModule from "./SearchModule";
 
 function HomePageModule() {
   return (
@@ -11,6 +12,7 @@ function HomePageModule() {
           Lorem ipsum dolor sit amet
         </span>
       </div>
+      <SearchModule />
     </div>
   );
 }
