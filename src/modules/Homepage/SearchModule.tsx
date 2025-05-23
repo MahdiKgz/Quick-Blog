@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import useBlogStore from "@/src/stores/usePostStore";
@@ -12,17 +12,17 @@ interface SearchModuleProps {
 function SearchModule({ onSearchResults }: SearchModuleProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const { searchArticles, setPosts, articles, hasArticles } = useBlogStore();
+  const { searchArticles, articles, setPosts } = useBlogStore();
 
-  // Original articles to restore when search is cleared
+  // Store original articles for restoring when search is cleared
   const [originalArticles, setOriginalArticles] = useState<typeof articles>([]);
 
-  // Save original articles when component mounts
+  // Save original articles when component mounts or articles change
   useEffect(() => {
-    if (hasArticles() && originalArticles.length === 0) {
+    if (articles.length > 0 && searchQuery === "") {
       setOriginalArticles(articles);
     }
-  }, [articles, hasArticles, originalArticles.length]);
+  }, [articles, searchQuery]);
 
   // Debounce search query to avoid too many searches while typing
   useEffect(() => {
@@ -35,21 +35,25 @@ function SearchModule({ onSearchResults }: SearchModuleProps) {
 
   // Perform search when debounced query changes
   useEffect(() => {
-    if (debouncedQuery) {
-      const results = searchArticles(debouncedQuery);
-      setPosts(results);
+    // Only search if we have articles to search through
+    if (articles.length > 0) {
+      if (debouncedQuery) {
+        const results = searchArticles(debouncedQuery);
 
-      // Notify parent if needed
-      if (onSearchResults) {
-        onSearchResults(results.length > 0);
-      }
-    } else if (originalArticles.length > 0) {
-      // Restore original articles when search is cleared
-      setPosts(originalArticles);
+        // Notify parent if needed
+        if (onSearchResults) {
+          onSearchResults(results.length > 0);
+        }
+      } else {
+        // Restore original articles when search is cleared
+        if (originalArticles.length > 0) {
+          setPosts(originalArticles);
+        }
 
-      // Notify parent if needed
-      if (onSearchResults) {
-        onSearchResults(true);
+        // Notify parent if needed
+        if (onSearchResults) {
+          onSearchResults(true);
+        }
       }
     }
   }, [
@@ -58,15 +62,21 @@ function SearchModule({ onSearchResults }: SearchModuleProps) {
     setPosts,
     originalArticles,
     onSearchResults,
+    articles.length,
   ]);
 
   // Handle clearing the search
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     if (originalArticles.length > 0) {
       setPosts(originalArticles);
+
+      // Notify parent if needed
+      if (onSearchResults) {
+        onSearchResults(true);
+      }
     }
-  };
+  }, [originalArticles, setPosts, onSearchResults]);
 
   return (
     <div className="relative w-full max-w-xl mx-auto">

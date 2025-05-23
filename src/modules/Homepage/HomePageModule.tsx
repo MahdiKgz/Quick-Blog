@@ -1,10 +1,31 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchModule from "./SearchModule";
 import CardContainerWithPagination from "./CardContainerWithPagination";
+import useBlogStore from "@/src/stores/usePostStore";
 
-function HomePageModule() {
+interface Article {
+  id: number;
+  title: string;
+  body: string;
+  userId?: number;
+  imageUrl?: string;
+}
+
+interface HomePageModuleProps {
+  initialArticles: Article[];
+}
+
+function HomePageModule({ initialArticles }: HomePageModuleProps) {
   const [hasSearchResults, setHasSearchResults] = useState(true);
+  const { setPosts } = useBlogStore();
+
+  // Initialize the store with server-fetched articles
+  useEffect(() => {
+    if (initialArticles && initialArticles.length > 0) {
+      setPosts(initialArticles);
+    }
+  }, [initialArticles, setPosts]);
 
   return (
     <div className="container my-[103px] w-full h-auto flex flex-col items-center justify-center gap-y-8">
@@ -78,7 +99,9 @@ function HomePageModule() {
       )}
 
       {/* Only show pagination if we have search results */}
-      {hasSearchResults && <CardContainerWithPagination />}
+      {hasSearchResults && (
+        <CardContainerWithPagination initialArticles={initialArticles} />
+      )}
     </div>
   );
 }

@@ -11,6 +11,12 @@ interface Article {
   id: number;
   title: string;
   body: string;
+  userId?: number;
+  imageUrl?: string;
+}
+
+interface CardContainerWithPaginationProps {
+  initialArticles: Article[];
 }
 
 // Skeleton component for loading state
@@ -57,9 +63,12 @@ async function fetchPosts(): Promise<Article[]> {
   }
 }
 
-export default function CardContainerWithPagination() {
+export default function CardContainerWithPagination({
+  initialArticles,
+}: CardContainerWithPaginationProps) {
   const { setPosts, articles, hasArticles, resetStore } = useBlogStore();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const articlesPerPage = 8;
 
   // Clear stored data on first render to ensure fresh data
@@ -114,6 +123,34 @@ export default function CardContainerWithPagination() {
     }
   }, [isError, error]);
 
+  // Function to fetch fresh articles from the API
+  const fetchFreshArticles = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const response = await fetch(`${origin}/api/articles`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch articles: ${response.status}`);
+      }
+
+      const freshArticles = await response.json();
+      setPosts(freshArticles);
+    } catch (error) {
+      console.error("Error refreshing articles:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [setPosts]);
+
   // Memoized page change handler to prevent unnecessary re-renders
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -129,11 +166,11 @@ export default function CardContainerWithPagination() {
   // Function to force refresh data
   const forceRefresh = useCallback(() => {
     resetStore();
-    refetch();
-  }, [resetStore, refetch]);
+    fetchFreshArticles();
+  }, [resetStore, fetchFreshArticles]);
 
-  // Show skeletons while loading and we don't have cached data
-  if (isFetchingPosts && !hasArticles()) {
+  // Show skeletons while refreshing
+  if (isRefreshing) {
     return (
       <div className="w-full flex flex-col">
         <div className="w-full text-center mb-4">
@@ -153,7 +190,7 @@ export default function CardContainerWithPagination() {
               <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
               <polyline points="13 2 13 9 20 9"></polyline>
             </svg>
-            <span>Loading articles...</span>
+            <span>Refreshing articles...</span>
           </div>
         </div>
         <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-center items-start gap-6">

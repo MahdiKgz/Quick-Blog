@@ -6,9 +6,13 @@ interface Article {
   id: number;
   title: string;
   body: string;
+  imageUrl?: string;
 }
 
-function ArticleCard({ id, title, body }: Article) {
+function ArticleCard({ id, title, body, imageUrl }: Article) {
+  // Use provided imageUrl or generate one based on ID as fallback
+  const imageSource = imageUrl || `https://picsum.photos/seed/${id}/500/300`;
+
   return (
     <Link
       href={`/blog/${id}`}
@@ -16,7 +20,7 @@ function ArticleCard({ id, title, body }: Article) {
     >
       <div className="relative w-full h-[180px] overflow-hidden">
         <Image
-          src={`https://picsum.photos/seed/${id}/500/300`}
+          src={imageSource}
           alt={title}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
