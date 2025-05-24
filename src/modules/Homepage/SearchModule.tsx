@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@heroui/input";
-import { Button } from "@heroui/button";
 import useBlogStore from "@/src/stores/usePostStore";
 
 interface SearchModuleProps {
@@ -11,113 +10,81 @@ interface SearchModuleProps {
 
 function SearchModule({ onSearchResults }: SearchModuleProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  const { searchArticles, articles, setPosts } = useBlogStore();
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const { searchArticles, filteredArticles } = useBlogStore();
 
-  // Store original articles for restoring when search is cleared
-  const [originalArticles, setOriginalArticles] = useState<typeof articles>([]);
+  // Store the timeout ID for cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Save original articles when component mounts or articles change
-  useEffect(() => {
-    if (articles.length > 0 && searchQuery === "") {
-      setOriginalArticles(articles);
-    }
-  }, [articles, searchQuery]);
+  // Handle search with debounce and error handling
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      setSearchError(null); // Clear any previous errors
 
-  // Debounce search query to avoid too many searches while typing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 300); // 300ms delay
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Perform search when debounced query changes
-  useEffect(() => {
-    // Only search if we have articles to search through
-    if (articles.length > 0) {
-      if (debouncedQuery) {
-        const results = searchArticles(debouncedQuery);
-
-        // Notify parent if needed
-        if (onSearchResults) {
-          onSearchResults(results.length > 0);
-        }
-      } else {
-        // Restore original articles when search is cleared
-        if (originalArticles.length > 0) {
-          setPosts(originalArticles);
-        }
-
-        // Notify parent if needed
-        if (onSearchResults) {
-          onSearchResults(true);
-        }
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-    }
-  }, [
-    debouncedQuery,
-    searchArticles,
-    setPosts,
-    originalArticles,
-    onSearchResults,
-    articles.length,
-  ]);
+
+      // Set a new timeout for debouncing
+      timeoutRef.current = setTimeout(() => {
+        try {
+          // Search and update results through the store
+          const results = searchArticles(query);
+          // Only update the UI if we need to show search results
+          onSearchResults?.(results.length > 0);
+        } catch (error) {
+          console.error("Search error:", error);
+          setSearchError(
+            "An error occurred while searching. Please try again."
+          );
+          onSearchResults?.(false);
+        }
+      }, 300);
+    },
+    [searchArticles, onSearchResults]
+  );
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle clearing the search
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
-    if (originalArticles.length > 0) {
-      setPosts(originalArticles);
-
-      // Notify parent if needed
-      if (onSearchResults) {
-        onSearchResults(true);
-      }
+    setSearchError(null);
+    try {
+      searchArticles("");
+      onSearchResults?.(true);
+    } catch (error) {
+      console.error("Error clearing search:", error);
     }
-  }, [originalArticles, setPosts, onSearchResults]);
+  }, [searchArticles, onSearchResults]);
 
   return (
     <div className="relative w-full max-w-xl mx-auto">
       <Input
         size="lg"
         className="w-full"
-        label="Search Articles"
         variant="flat"
+        label="Search Articles"
+        labelPlacement="outside"
         classNames={{
           label: "text-base text-darkBlue-1 dark:text-blue-700",
-          input: "pl-12 pr-12",
-          innerWrapper: "group",
         }}
         value={searchQuery}
-        onValueChange={setSearchQuery}
-        startContent={
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-data-[focused=true]:text-darkBlue-1 dark:group-data-[focused=true]:text-blue-700 transition-colors">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="group-data-[focused=true]:scale-110 transition-transform"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </div>
-        }
+        onValueChange={handleSearch}
         endContent={
           searchQuery ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="min-w-0 p-0 h-8 w-8 rounded-full absolute right-2"
-              onPress={handleClearSearch}
+            <button
+              onClick={handleClearSearch}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -129,16 +96,35 @@ function SearchModule({ onSearchResults }: SearchModuleProps) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors duration-200"
               >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-            </Button>
+            </button>
           ) : null
         }
       />
-      {debouncedQuery && (
+      {searchError && (
+        <div className="mt-2 text-sm text-red-500 flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {searchError}
+        </div>
+      )}
+      {searchQuery && !searchError && (
         <div className="mt-2 text-sm text-gray-500 flex items-center gap-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -155,8 +141,13 @@ function SearchModule({ onSearchResults }: SearchModuleProps) {
           </svg>
           Showing results for:{" "}
           <span className="font-medium text-darkBlue-1 dark:text-blue-700">
-            {debouncedQuery}
+            {searchQuery}
           </span>
+          {filteredArticles.length > 0 && (
+            <span className="ml-1 text-gray-500">
+              ({filteredArticles.length} results)
+            </span>
+          )}
         </div>
       )}
     </div>

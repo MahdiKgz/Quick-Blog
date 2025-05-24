@@ -12,6 +12,7 @@ interface Article {
 interface BlogStore {
   articles: Article[];
   isLoaded: boolean;
+  filteredArticles: Article[];
   setPosts: (articles: Article[]) => void;
   getArticleById: (articleId: string) => Article | null;
   getRelatedArticles: (articleId: string, count?: number) => Article[];
@@ -24,12 +25,14 @@ const useBlogStore = create<BlogStore>()(
   persist(
     (set, get) => ({
       articles: [],
+      filteredArticles: [],
       isLoaded: false,
 
       // Set posts and mark store as loaded
       setPosts: (articles) =>
         set({
           articles: articles.length > 0 ? articles : [],
+          filteredArticles: articles.length > 0 ? articles : [],
           isLoaded: true,
         }),
 
@@ -65,22 +68,39 @@ const useBlogStore = create<BlogStore>()(
           .slice(0, count);
       },
 
-      // Search articles by title or body content
+      // Search articles by title or body content - optimized version with error handling
       searchArticles: (query) => {
-        const articles = get().articles;
-        if (!query) return articles;
+        try {
+          const { articles } = get();
 
-        const lowerQuery = query.toLowerCase();
-        return articles.filter(
-          (article) =>
-            article.title.toLowerCase().includes(lowerQuery) ||
-            article.body.toLowerCase().includes(lowerQuery)
-        );
+          if (!query || query.trim() === "") {
+            // If query is empty, return all articles without filtering
+            set({ filteredArticles: articles });
+            return articles;
+          }
+
+          const lowerQuery = query.toLowerCase();
+          const filtered = articles.filter(
+            (article) =>
+              article.title.toLowerCase().includes(lowerQuery) ||
+              article.body.toLowerCase().includes(lowerQuery)
+          );
+
+          // Update filtered articles in the store
+          set({ filteredArticles: filtered });
+          return filtered;
+        } catch (error) {
+          console.error("Error in searchArticles:", error);
+          // In case of error, return the full articles array to avoid breaking the UI
+          const { articles } = get();
+          set({ filteredArticles: articles });
+          return articles;
+        }
       },
 
       // Reset store to empty state (clear localStorage cache)
       resetStore: () => {
-        set({ articles: [], isLoaded: false });
+        set({ articles: [], filteredArticles: [], isLoaded: false });
         // Also clear localStorage manually to ensure cache is completely cleared
         if (typeof window !== "undefined") {
           localStorage.removeItem("blog-storage");
@@ -92,7 +112,10 @@ const useBlogStore = create<BlogStore>()(
       storage: createJSONStorage(() => localStorage),
       // Only skip hydration if not in browser environment
       skipHydration: typeof window === "undefined",
-      partialize: (state) => ({ articles: state.articles }),
+      partialize: (state) => ({
+        articles: state.articles,
+        filteredArticles: state.filteredArticles,
+      }),
       version: 1, // Add version to be able to reset on version change
     }
   )

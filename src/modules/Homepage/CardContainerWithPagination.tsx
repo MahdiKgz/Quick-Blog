@@ -37,26 +37,40 @@ async function fetchPosts(): Promise<Article[]> {
   try {
     // Add a timeout to prevent long-hanging requests
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased timeout to 15 seconds
 
-    const res = await fetch("https://jsonplaceholder.typicode.com/posts", {
-      signal: controller.signal,
-      cache: "no-store", // Ensure we get fresh data
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-      },
-    });
+    try {
+      const res = await fetch("https://jsonplaceholder.typicode.com/posts", {
+        signal: controller.signal,
+        cache: "no-store", // Ensure we get fresh data
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch posts: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        throw new Error(
+          `Failed to fetch posts: ${res.status} ${res.statusText}`
+        );
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (fetchError) {
+      // Check if the error is due to an aborted request
+      if (
+        fetchError instanceof DOMException &&
+        fetchError.name === "AbortError"
+      ) {
+        console.warn("Fetch request was aborted, possibly due to timeout");
+        throw new Error("Request timed out. Please try again later.");
+      }
+      throw fetchError; // Re-throw other errors
     }
-
-    const data = await res.json();
-    return data;
   } catch (error) {
     console.error("Error fetching posts:", error);
     return []; // Return empty array on error, fallback will handle it
@@ -66,7 +80,8 @@ async function fetchPosts(): Promise<Article[]> {
 export default function CardContainerWithPagination({
   initialArticles,
 }: CardContainerWithPaginationProps) {
-  const { setPosts, articles, hasArticles, resetStore } = useBlogStore();
+  const { setPosts, articles, filteredArticles, hasArticles, resetStore } =
+    useBlogStore();
   const [currentPage, setCurrentPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const articlesPerPage = 8;
@@ -129,21 +144,41 @@ export default function CardContainerWithPagination({
     try {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-      const response = await fetch(`${origin}/api/articles`, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch articles: ${response.status}`);
+      // Add a timeout to prevent long-hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      try {
+        const response = await fetch(`${origin}/api/articles`, {
+          signal: controller.signal,
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch articles: ${response.status}`);
+        }
+
+        const freshArticles = await response.json();
+        setPosts(freshArticles);
+      } catch (fetchError) {
+        // Check if the error is due to an aborted request
+        if (
+          fetchError instanceof DOMException &&
+          fetchError.name === "AbortError"
+        ) {
+          console.warn("Fetch request was aborted, possibly due to timeout");
+          throw new Error("Request timed out. Please try again later.");
+        }
+        throw fetchError; // Re-throw other errors
       }
-
-      const freshArticles = await response.json();
-      setPosts(freshArticles);
     } catch (error) {
       console.error("Error refreshing articles:", error);
     } finally {
@@ -161,7 +196,7 @@ export default function CardContainerWithPagination({
   // Reset to page 1 if articles change (e.g. if articles are filtered)
   useEffect(() => {
     setCurrentPage(1);
-  }, [articles.length]);
+  }, [filteredArticles.length]);
 
   // Function to force refresh data
   const forceRefresh = useCallback(() => {
@@ -238,13 +273,13 @@ export default function CardContainerWithPagination({
   }
 
   // Calculate pagination
-  const totalPages = Math.ceil(articles.length / articlesPerPage);
+  const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
   const startIndex = (currentPage - 1) * articlesPerPage;
   const endIndex = startIndex + articlesPerPage;
-  const currentArticles = articles.slice(startIndex, endIndex);
+  const currentArticles = filteredArticles.slice(startIndex, endIndex);
 
   // Show message if no articles are found
-  if (articles.length === 0) {
+  if (filteredArticles.length === 0) {
     return (
       <div className="w-full py-10 text-center">
         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -308,7 +343,7 @@ export default function CardContainerWithPagination({
       <div className="w-full flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-full flex items-center">
           <span className="font-medium text-darkBlue-1 dark:text-blue-700">
-            {articles.length}
+            {filteredArticles.length}
           </span>{" "}
           articles available
           <button
@@ -335,8 +370,8 @@ export default function CardContainerWithPagination({
           </button>
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          Showing {startIndex + 1}-{Math.min(endIndex, articles.length)} of{" "}
-          {articles.length} articles
+          Showing {startIndex + 1}-{Math.min(endIndex, filteredArticles.length)}{" "}
+          of {filteredArticles.length} articles
         </div>
       </div>
 
